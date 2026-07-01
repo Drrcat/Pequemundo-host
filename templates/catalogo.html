@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <title>Catálogo - Peque Mundo</title>
+</head>
+<body>
+
+  <!-- ── NAVBAR (igual que index) ── -->
+  <header class="home-header">
+    <a href="{{ url_for('publico.inicio') }}" class="home-brand">
+      <img src="{{ url_for('static', filename='img/Logo_pequemundo.png') }}" alt="Peque Mundo" class="home-logo">
+    </a>
+    <nav class="home-nav">
+      <a href="{{ url_for('publico.inicio') }}">Inicio</a>
+      <a href="{{ url_for('publico.catalogo') }}" style="color:var(--color-primary);">Catálogo</a>
+      <a href="{{ url_for('publico.sabor_latino') }}">Socios</a>
+      <a href="{{ url_for('publico.inicio') }}#nosotros">Nosotros</a>
+    </nav>
+    <div class="home-actions">
+      {% if session.get('usuario') %}
+        {% if session.get('rol') == 'Admin' %}
+          <a href="{{ url_for('admin.admin_dashboard') }}" title="Panel Admin">⚙️</a>
+        {% elif session.get('rol') == 'Vendedor' %}
+          <a href="{{ url_for('vendedor.vendedor_dashboard') }}" title="Panel Vendedor">🏪</a>
+        {% else %}
+          <a href="{{ url_for('pedidos.mis_pedidos') }}" title="Mis pedidos">📦</a>
+        {% endif %}
+        <a href="{{ url_for('auth.cerrar_sesion') }}" title="Cerrar sesión">🔓</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" title="Iniciar sesión">👤</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- ── BANNER DEL CATÁLOGO ── -->
+  <section class="catalog-hero">
+    <div class="catalog-hero-inner">
+      <span class="hero-label">Muebles infantiles</span>
+      <h1>Nuestro Catálogo</h1>
+      <p>Encuentra el mueble perfecto para el espacio de tu hijo.</p>
+    </div>
+  </section>
+
+  <!-- ── CONTENIDO PRINCIPAL ── -->
+  <main class="catalog-main">
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="margin-bottom:2rem;">
+          {% for cat, msg in messages %}
+            <div class="flash flash-{{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Buscador -->
+    <div class="search-container" style="margin-bottom:2rem;">
+      <input type="text" id="buscador" placeholder="Buscar muebles..." oninput="filtrar()">
+      <button type="button" onclick="filtrar()">🔍</button>
+    </div>
+
+    <!-- Filtro por categorías -->
+    <nav class="category-list" id="categoryList">
+      <button class="category active" type="button" onclick="setCat(this, '')">Todos</button>
+      <!-- Las categorías se agregan dinámicamente desde la API -->
+    </nav>
+
+    <!-- Grid de productos -->
+    <section class="product-grid" id="productGrid">
+      <p class="catalog-empty" id="loadingMsg">Cargando productos...</p>
+    </section>
+
+    <p class="catalog-empty" id="emptyMsg" style="display:none;">
+      No hay productos disponibles en esta categoría.
+    </p>
+
+  </main>
+
+  <!-- ── FOOTER (igual que index) ── -->
+  <footer class="home-footer">
+    <div>
+      <h3>Peque Mundo</h3>
+      <p>Muebles infantiles para espacios únicos.</p>
+    </div>
+    <div class="footer-links">
+      <a href="{{ url_for('publico.inicio') }}">Inicio</a>
+      <a href="{{ url_for('publico.catalogo') }}">Catálogo</a>
+      {% if session.get('usuario') %}
+        <a href="{{ url_for('pedidos.mis_pedidos') }}">Mis pedidos</a>
+        <a href="{{ url_for('auth.cerrar_sesion') }}">Cerrar sesión</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+        <a href="{{ url_for('auth.registro') }}">Registrarse</a>
+      {% endif %}
+    </div>
+  </footer>
+
+  {% include 'carrito_flotante.html' %}
+
+  <script>
+    const IMG_BASE   = "{{ url_for('static', filename='img/') }}";
+    const IMG_FALLBACK = "{{ url_for('static', filename='img/peque-mueble.webp') }}";
+    const API_URL    = "{{ url_for('api.api_productos') }}";
+    const CAT_URL    = "{{ url_for('api.api_categorias') }}";
+
+    let todosLosProductos = [];
+    let catActual = '';
+
+    // ── Carga inicial ─────────────────────────────────────────────
+    async function cargarCatalogo() {
+      try {
+        const [resProd, resCat] = await Promise.all([
+          fetch(API_URL),
+          fetch(CAT_URL)
+        ]);
+        todosLosProductos = await resProd.json();
+        const categorias  = await resCat.json();
+
+        construirCategoriasNav(categorias);
+        renderProductos(todosLosProductos);
+      } catch (err) {
+        document.getElementById('loadingMsg').textContent =
+          '⚠️ Error al cargar productos. Intenta recargar la página.';
+      }
+    }
+
+    // ── Navegación de categorías ──────────────────────────────────
+    function construirCategoriasNav(cats) {
+      const nav = document.getElementById('categoryList');
+      cats.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'category';
+        btn.type = 'button';
+        btn.textContent = cat;
+        btn.onclick = () => setCat(btn, cat);
+        nav.appendChild(btn);
+      });
+    }
+
+    function setCat(btn, cat) {
+      catActual = cat;
+      document.querySelectorAll('#categoryList .category')
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filtrar();
+    }
+
+    // ── Filtrado ─────────────────────────────────────────────────
+    function filtrar() {
+      const texto = document.getElementById('buscador').value.toLowerCase().trim();
+      const filtrados = todosLosProductos.filter(p => {
+        const matchCat  = !catActual || p.categoria === catActual;
+        const matchText = !texto ||
+          p.nombre.toLowerCase().includes(texto) ||
+          p.descripcion.toLowerCase().includes(texto) ||
+          p.categoria.toLowerCase().includes(texto);
+        return matchCat && matchText;
+      });
+      renderProductos(filtrados);
+    }
+
+    // ── Render de tarjetas ────────────────────────────────────────
+    function renderProductos(lista) {
+      const grid   = document.getElementById('productGrid');
+      const empty  = document.getElementById('emptyMsg');
+      const loading = document.getElementById('loadingMsg');
+
+      if (loading) loading.remove();
+
+      if (lista.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      grid.innerHTML = lista.map((p, idx) => crearTarjeta(p, idx)).join('');
+    }
+
+    function crearTarjeta(p, idx) {
+      const precioFmt = '$' + Math.round(p.precio).toLocaleString('es-CL');
+      const imgSrc    = IMG_BASE + p.imagen;
+      const desc      = p.descripcion.length > 70
+        ? p.descripcion.substring(0, 70) + '...'
+        : p.descripcion;
+      const nombreEsc = p.nombre.replace(/'/g, "\\'");
+
+      const badge = idx === 0
+        ? '<span class="badge">Nuevo</span>'
+        : idx === 1
+        ? '<span class="badge popular">Popular</span>'
+        : '';
+
+      const accion = p.stock > 0
+        ? `<p class="stock">● En stock (${p.stock} disponibles)</p>
+           <button type="button"
+             onclick="agregarAlCarrito(${p.id}, '${nombreEsc}', ${Math.round(p.precio)}, ${p.stock})">
+             🛒 Agregar al carrito
+           </button>`
+        : `<p style="color:#ef4444;font-size:1.3rem;margin-bottom:1.4rem;">● Agotado</p>
+           <button type="button" disabled style="opacity:0.5;cursor:not-allowed;">Sin stock</button>`;
+
+      return `
+        <article class="product-card"
+          data-nombre="${p.nombre.toLowerCase()}"
+          data-cat="${p.categoria}">
+          ${badge}
+          <img src="${imgSrc}" alt="${p.nombre}"
+               onerror="this.src='${IMG_FALLBACK}'">
+          <h3>${p.nombre}</h3>
+          <p style="font-size:1.3rem;color:#6b7280;margin-bottom:0.8rem;">${desc}</p>
+          <p class="price">${precioFmt}</p>
+          ${accion}
+        </article>`;
+    }
+
+    cargarCatalogo();
+  </script>
+
+</body>
+</html>
