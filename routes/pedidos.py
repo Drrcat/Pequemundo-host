@@ -26,6 +26,14 @@ def checkout_json():
     items = data.get('items', [])
     if not items:
         return jsonify({'error': 'Carrito vacío'}), 400
+
+    # Bloquea productos de socios comerciales (ej. Sabor Latino): no se venden directo
+    for item in items:
+        if str(item.get('id', '')).startswith('SL-'):
+            return jsonify({
+                'error': 'Este producto pertenece a nuestro socio comercial y no se vende directamente. Usa el botón de contacto para consultar por él.'
+            }), 400
+
     usuario = db.session.get(Usuario, session['usuario_id'])
     total = sum(i['precio'] * i['cantidad'] for i in items)
     for item in items:
