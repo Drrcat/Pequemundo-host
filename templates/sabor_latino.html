@@ -100,15 +100,15 @@
             <p class="price">{{ p.precio_formateado }}</p>
 
             {% if p.stock > 0 %}
-              <p class="stock">● En stock ({{ p.stock }} disponibles)</p>
-              <button type="button"
-                onclick="agregarAlCarrito('{{ p.id }}', '{{ p.nombre | replace("'", "\\'") }}', {{ p.precio }}, {{ p.stock }})">
-                🛒 Agregar al carrito
-              </button>
+              <p class="stock">● Disponible ({{ p.stock }} unidades en el socio)</p>
             {% else %}
-              <p style="color:#ef4444;font-size:1.3rem;margin-bottom:1.4rem;">● Agotado</p>
-              <button type="button" disabled style="opacity:0.5;cursor:not-allowed;">Sin stock</button>
+              <p style="color:#ef4444;font-size:1.3rem;margin-bottom:1.4rem;">● Sin stock por el momento</p>
             {% endif %}
+
+            <button type="button"
+              onclick="consultarProducto('{{ p.nombre | replace("'", "\\'") }}', '{{ p.sku }}')">
+              📩 Consultar por este producto
+            </button>
 
           </article>
         {% endfor %}
@@ -171,6 +171,14 @@
     document.querySelectorAll('#categoryList .category').forEach((btn, i) => {
       btn.dataset.cat = i === 0 ? '' : btn.textContent.trim().toLowerCase();
     });
+
+    function consultarProducto(nombre, sku) {
+      const asunto = encodeURIComponent('Consulta por producto - PequeMundo');
+      const cuerpo = encodeURIComponent(
+        `Hola, me interesa el producto "${nombre}" (SKU: ${sku}) que vi en el sitio de PequeMundo.`
+      );
+      window.location.href = `mailto:contacto@saborlatinochile.cl?subject=${asunto}&body=${cuerpo}`;
+    }
   </script>
 
 </body>
