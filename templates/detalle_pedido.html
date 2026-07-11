@@ -20,6 +20,13 @@
       font-size: 1.2rem;
       font-weight: 700;
     }
+    /* Fix: el tfoot no heredaba el padding de .history-table tbody td */
+    .history-table tfoot td {
+      padding: 1.8rem 2.4rem;
+      color: var(--color-text);
+      vertical-align: middle;
+      border-top: 0.2rem solid var(--color-border);
+    }
   </style>
 </head>
 <body>
@@ -74,60 +81,4 @@
             <tr><td><strong>Estado del pago (Mercado Pago)</strong></td>
                 <td>{{ pedido.estado_pago or '—' }}</td></tr>
             <tr><td><strong>ID Transacción</strong></td>
-                <td class="history-txn">{{ pedido.codigo_transaccion or '—' }}</td></tr>
-            <tr><td><strong>Tipo de entrega</strong></td>
-                <td>{{ pedido.tipo_entrega or '—' }}</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      {% if pedido.lineas %}
-      <h2 style="margin:2rem 0 1rem;">Productos</h2>
-      <div class="history-table-wrapper">
-        <table class="history-table">
-          <thead><tr><th>Producto</th><th>Cant.</th><th>Total</th></tr></thead>
-          <tbody>
-            {% for item in pedido.lineas %}
-            <tr>
-              <td>{{ item.nombre }}</td>
-              <td>{{ item.cantidad }}</td>
-              <td class="history-monto">${{ "{:,.0f}".format(item.subtotal) }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot>
-            {% if pedido.precio_envio %}
-            <tr>
-              <td colspan="2">Envío</td>
-              <td class="history-monto">${{ "{:,.0f}".format(pedido.precio_envio) }}</td>
-            </tr>
-            {% endif %}
-            <tr>
-              <td colspan="2"><strong>Total</strong></td>
-              <td class="history-monto"><strong>${{ "{:,.0f}".format(pedido.total) }}</strong></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      {% endif %}
-
-      <div class="cart-actions-bar" style="margin-top:2rem;justify-content:center;gap:1rem;">
-        <a href="{{ url_for('publico.catalogo') }}" class="secondary-button">Seguir comprando</a>
-        <a href="{{ url_for('pedidos.mis_pedidos') }}" class="primary-button">Ver todos mis pedidos</a>
-      </div>
-    </div>
-  </main>
-
-  <footer class="home-footer">
-    <div><h3>Peque Mundo</h3><p>Muebles infantiles para espacios únicos.</p></div>
-    <div class="footer-links">
-      <a href="{{ url_for('publico.inicio') }}">Inicio</a>
-      <a href="{{ url_for('publico.catalogo') }}">Catálogo</a>
-      <a href="{{ url_for('pedidos.mis_pedidos') }}">Mis pedidos</a>
-    </div>
-  </footer>
-
-  {% include 'carrito_flotante.html' %}
-  <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
-</body>
-</html>
+                <td class="history-txn">{{ pedido.codigo_transaccion or '—'
