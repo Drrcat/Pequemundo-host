@@ -5,7 +5,6 @@ MP_ACCESS_TOKEN = os.environ.get(
     'MP_ACCESS_TOKEN',
     'TEST-7405494608123272-053123-046e81571c23bf9c73efb64662b94c28-585535158'
 )
-print(f"MP_ACCESS_TOKEN en uso: {MP_ACCESS_TOKEN[:30]}...")
 sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
 
 
@@ -29,6 +28,7 @@ def crear_preferencia(items_list, cliente_nombre, cliente_email, pedido_id, base
             "failure": f"{base_url}/mp/failure",
             "pending": f"{base_url}/mp/pending",
         },
+        "auto_return": "approved",
         "external_reference": str(pedido_id),
     }
 
