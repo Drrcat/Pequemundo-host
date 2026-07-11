@@ -1,9 +1,35 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+import requests
+import urllib3
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from extensions import db
 from models import Producto, Pedido, Usuario
 from decorators import requiere_admin
 
 admin_bp = Blueprint('admin', __name__)
+
+# Llamadas internas al self-signed cert de "flask run --cert=adhoc" en dev local.
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def _productos_api(method, path, **kwargs):
+    """Llama a la API de productos (apis/productos_api.py), que es quien escribe en la BD."""
+    url = f"{request.host_url.rstrip('/')}{path}"
+    kwargs.setdefault('timeout', 10)
+    if request.is_secure:
+        kwargs.setdefault('verify', False)
+    return requests.request(method, url, **kwargs)
+
+
+def _form_a_payload(form):
+    return {
+        'nombre': form['nombre'],
+        'descripcion': form['descripcion'],
+        'imagen': form['imagen'],
+        'categoria': form['categoria'],
+        'precio': form['precio'],
+        'stock': form['stock'],
+        'estado': form['estado'],
+    }
 
 
 @admin_bp.route('/admin')
@@ -32,52 +58,59 @@ def productos():
 @requiere_admin
 def agregar_producto():
     if request.method == 'POST':
-        nuevo = Producto(
-            nombre=request.form['nombre'],
-            descripcion=request.form['descripcion'],
-            imagen=request.form['imagen'],
-            categoria=request.form['categoria'],
-            precio=float(request.form['precio']),
-            stock=int(request.form['stock']),
-            estado=request.form['estado']
-        )
-        db.session.add(nuevo)
-        db.session.commit()
-        flash('Producto agregado correctamente.', 'success')
-        return redirect(url_for('admin.productos'))
+        try:
+            resp = _productos_api('POST', '/api/productos', json=_form_a_payload(request.form))
+        except requests.RequestException as e:
+            flash(f'No se pudo conectar con la API de productos: {e}', 'danger')
+            return render_template('agregar_producto.html')
+        if resp.status_code == 201:
+            flash('Producto agregado correctamente.', 'success')
+            return redirect(url_for('admin.productos'))
+        flash(f"Error al agregar producto: {resp.json().get('error', resp.text)}", 'danger')
+        return render_template('agregar_producto.html')
     return render_template('agregar_producto.html')
 
 
 @admin_bp.route('/admin/editar/<int:id>', methods=['GET', 'POST'])
 @requiere_admin
 def editar_producto(id):
-    producto = db.session.get(Producto, id)
-    if not producto:
-        from flask import abort
-        abort(404)
-    if request.method == 'POST':
-        producto.nombre = request.form['nombre']
-        producto.descripcion = request.form['descripcion']
-        producto.imagen = request.form['imagen']
-        producto.categoria = request.form['categoria']
-        producto.precio = float(request.form['precio'])
-        producto.stock = int(request.form['stock'])
-        producto.estado = request.form['estado']
-        db.session.commit()
-        flash('Producto actualizado.', 'success')
+    try:
+        get_resp = _productos_api('GET', f'/api/productos/{id}')
+    except requests.RequestException as e:
+        flash(f'No se pudo conectar con la API de productos: {e}', 'danger')
         return redirect(url_for('admin.productos'))
+    if get_resp.status_code == 404:
+        abort(404)
+    if get_resp.status_code != 200:
+        flash('No se pudo obtener el producto.', 'danger')
+        return redirect(url_for('admin.productos'))
+    producto = get_resp.json()
+
+    if request.method == 'POST':
+        payload = _form_a_payload(request.form)
+        put_resp = _productos_api('PUT', f'/api/productos/{id}', json=payload)
+        if put_resp.status_code == 200:
+            flash('Producto actualizado.', 'success')
+            return redirect(url_for('admin.productos'))
+        flash(f"Error al actualizar producto: {put_resp.json().get('error', put_resp.text)}", 'danger')
+        producto = {**producto, **payload}
+
     return render_template('editar_producto.html', producto=producto)
 
 
 @admin_bp.route('/admin/eliminar/<int:id>', methods=['POST'])
 @requiere_admin
 def eliminar_producto(id):
-    producto = db.session.get(Producto, id)
-    if not producto:
-        from flask import abort
+    try:
+        resp = _productos_api('DELETE', f'/api/productos/{id}')
+    except requests.RequestException as e:
+        flash(f'No se pudo conectar con la API de productos: {e}', 'danger')
+        return redirect(url_for('admin.productos'))
+    if resp.status_code == 404:
         abort(404)
-    db.session.delete(producto)
-    db.session.commit()
+    if resp.status_code != 200:
+        flash(f"Error al eliminar producto: {resp.json().get('error', resp.text)}", 'danger')
+        return redirect(url_for('admin.productos'))
     flash('Producto eliminado.', 'success')
     return redirect(url_for('admin.productos'))
 
@@ -101,7 +134,6 @@ def usuarios():
 def actualizar_rol(id):
     usuario = db.session.get(Usuario, id)
     if not usuario:
-        from flask import abort
         abort(404)
     usuario.rol = request.form['rol']
     db.session.commit()

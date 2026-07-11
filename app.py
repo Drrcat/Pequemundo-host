@@ -12,6 +12,7 @@ from routes.vendedor import vendedor_bp
 from routes.mp import mp_bp
 from routes.api import api_bp
 from apis.pedidos_api import pedidos_api_bp
+from apis.productos_api import productos_api_bp
 
 
 def create_app():
@@ -29,6 +30,7 @@ def create_app():
     app.register_blueprint(mp_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(pedidos_api_bp)
+    app.register_blueprint(productos_api_bp)
 
     @app.template_filter('from_json')
     def from_json_filter(value):
