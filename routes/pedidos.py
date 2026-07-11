@@ -228,4 +228,4 @@ def detalle_pedido(id):
         'cliente': pedido.cliente,
         'lineas': items_raw,
     }
-    return render_template('detalle.html', pedido=pedido_data)
+    return render_template('detalle_pedido.html', pedido=pedido_data)
