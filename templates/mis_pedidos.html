@@ -23,6 +23,11 @@
       font-weight: 800;
       margin: 0;
     }
+    .pedido-card-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
     .pedido-card {
       background: #fff;
       border: 1px solid #e5e7eb;
@@ -30,6 +35,12 @@
       padding: 2rem 2.4rem;
       margin-bottom: 1.4rem;
       box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      transition: box-shadow 0.15s ease, transform 0.15s ease;
+      cursor: pointer;
+    }
+    .pedido-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
     }
     .pedido-top {
       display: flex;
@@ -67,6 +78,12 @@
       font-size: 1.3rem;
       color: #374151;
       line-height: 1.8;
+    }
+    .pedido-ver-mas {
+      margin-top: 1.2rem;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #4f7df3;
     }
     .empty-state {
       text-align: center;
@@ -119,6 +136,7 @@
 
     {% if pedidos %}
       {% for p in pedidos %}
+      <a href="{{ url_for('pedidos.detalle_pedido', id=p.id) }}" class="pedido-card-link">
       <div class="pedido-card">
         <div class="pedido-top">
           <div>
@@ -139,7 +157,6 @@
         </div>
 
         {% if p.items_json %}
-          {% set items = p.items_json | tojson %}
           <div class="pedido-items">
             <strong style="display:block;margin-bottom:0.5rem;font-size:1.2rem;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Productos</strong>
             {% set parsed = p.items_json | from_json %}
@@ -158,7 +175,10 @@
           Payment ID: {{ p.mp_payment_id }}
         </div>
         {% endif %}
+
+        <div class="pedido-ver-mas">Ver detalle del pedido →</div>
       </div>
+      </a>
       {% endfor %}
 
     {% else %}
