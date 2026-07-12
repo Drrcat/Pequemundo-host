@@ -111,14 +111,7 @@ INSERT INTO usuarios (nombre_usuario, email, telefono, password_hash, rol) VALUE
 ('Admin',          'admin@pequemundo.cl', '+56912345678', 'admin123',   'Admin'),
 ('María González', 'cliente@test.cl',     '+56987654321', 'cliente123', 'Cliente');
 
-INSERT INTO producto (nombre, descripcion, categoria, precio, stock, imagen, estado) VALUES
-('Cuna Clásica',          'Cuna de madera sólida con barandas ajustables.',              'Cunas',       129990, 8,  'peque-mueble.webp', 'Activo'),
-('Cuna Convertible 3en1', 'Se transforma de cuna a cama de niño y luego a sofá.',        'Cunas',       189990, 4,  'peque-mueble.webp', 'Activo'),
-('Cuna Viajera Plegable', 'Ligera y plegable, ideal para viajes. Incluye bolso.',        'Cunas',        79990, 12, 'peque-mueble.webp', 'Activo'),
-('Cama Individual',       'Cama con barandas de seguridad, para niños de 2 a 8 años.',  'Camas',       149990, 6,  'peque-mueble.webp', 'Activo'),
-('Cama Litera Doble',     'Litera con escalera integrada y barandas de seguridad.',      'Camas',       249990, 3,  'peque-mueble.webp', 'Activo'),
-('Cama con Cajones',      'Cama individual con dos cajones de almacenamiento.',          'Camas',       179990, 5,  'peque-mueble.webp', 'Activo'),
-('Cómoda 3 Cajones',      'Cómoda compacta con tres amplios cajones.',                  'Cómodas',      99990, 10, 'peque-mueble.webp', 'Activo'),
-('Escritorio Infantil',   'Escritorio regulable en altura para niños.',                 'Escritorios',  89990, 7,  'peque-mueble.webp', 'Activo'),
-('Silla Ergonómica Kids', 'Silla ajustable con soporte lumbar para niños.',             'Sillas',       69990, 9,  'peque-mueble.webp', 'Activo'),
-('Clóset 2 Puertas',      'Clóset espacioso con barra y estantes internos.',            'Clósets',     199990, 4,  'peque-mueble.webp', 'Activo');
+-- Los productos ya NO se cargan por SQL directo: la única vía es la API
+-- (POST /api/productos, servida por apis/productos_api.py contra esta misma BD).
+-- Para poblar el catálogo de prueba, con la app corriendo, ejecuta:
+--   python scripts/seed_productos.py
