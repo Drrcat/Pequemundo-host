@@ -763,6 +763,11 @@ mark {
   color: var(--color-text-muted);
 }
 
+.footer-copy {
+  font-size: 1.3rem;
+  margin-top: 0.6rem;
+}
+
 .footer-links {
   display: flex;
   gap: 2rem;

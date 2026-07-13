@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime
 from flask import Flask
 from config import Config
 from extensions import db
@@ -38,6 +39,10 @@ def create_app():
             return json.loads(value)
         except Exception:
             return []
+
+    @app.context_processor
+    def inject_anio_actual():
+        return {'anio_actual': datetime.now().year}
 
     return app
 
